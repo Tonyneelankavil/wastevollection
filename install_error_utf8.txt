@@ -1,0 +1,38 @@
+﻿node.exe : npm error code ERESOLVE
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm e 
+   rror code ERESOLVE:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm error ERESOLVE unable to resolve dependency 
+tree
+npm error
+npm error While resolving: wastecollection@0.0.0
+npm error Found: react@19.0.0
+npm error node_modules/react
+npm error   react@"19.0.0" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer react@"^16.0.0 || ^17.0.0 || 
+^18.0.0" from recharts@2.13.3
+npm error node_modules/recharts
+npm error   recharts@"2.13.3" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or 
+retry
+npm error this command with --force or 
+--legacy-peer-deps
+npm error to accept an incorrect (and potentially 
+broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\pbroh\AppData\Local\npm-cache\_l
+ogs\2026-02-05T05_03_44_605Z-eresolve-report.txt
+npm error A complete log of this run can be found 
+in: C:\Users\pbroh\AppData\Local\npm-cache\_logs\20
+26-02-05T05_03_44_605Z-debug-0.log

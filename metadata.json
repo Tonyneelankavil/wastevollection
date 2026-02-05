@@ -1,0 +1,9 @@
+
+{
+  "name": "WasteCollection",
+  "description": "A smart waste management platform for scheduling collections and identifying waste categories using AI.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
