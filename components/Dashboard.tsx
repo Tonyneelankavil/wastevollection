@@ -104,20 +104,40 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await addDoc(collection(db, `users/${user.id}/pickups`), {
-        date: formData.get('date') as string,
-        type: formData.get('type') as string,
-        size: formData.get('size') as string,
+      const date = formData.get('date') as string;
+      const type = formData.get('type') as string;
+      const size = formData.get('size') as string;
+      const address = formData.get('address') as string;
+
+      if (!date || !type || !size || !address) {
+        throw new Error("Please fill in all required fields.");
+      }
+
+      const pickupData: any = {
+        date,
+        type,
+        size,
         status: 'PENDING',
-        address: formData.get('address') as string,
-        latitude: coordinates?.lat,
-        longitude: coordinates?.lng,
+        address,
         weightEstimate: (Math.random() * 5 + 1).toFixed(1)
-      });
+      };
+
+      if (coordinates) {
+        pickupData.latitude = coordinates.lat;
+        pickupData.longitude = coordinates.lng;
+      }
+
+      await addDoc(collection(db, `users/${user.id}/pickups`), pickupData);
       setShowScheduleModal(false);
       setCoordinates(null);
-    } catch (err) {
-      alert("Failed to schedule pickup.");
+      alert("Pickup scheduled successfully!");
+    } catch (err: any) {
+      console.error("Error scheduling pickup:", err);
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("An unknown error occurred while scheduling pickup.");
+      }
     }
   };
 
@@ -142,7 +162,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
               </div>
-              <span className="text-xl font-bold text-green-900 tracking-tight">WasteCollection</span>
+              <span className="text-xl font-bold text-green-900 tracking-tight">Greenscrap</span>
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end">
