@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, onSnapshot, addDoc, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { User, WastePickup } from '../types';
+import { KERALA_DISTRICTS, KERALA_LOCAL_BODIES } from '../src/data/keralaData';
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
     PieChart, Pie, Cell, Legend
@@ -18,6 +19,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
     const [showScheduleModal, setShowScheduleModal] = useState(false);
     const [coordinates, setCoordinates] = useState<{ lat: number, lng: number } | null>(null);
     const [isLocating, setIsLocating] = useState(false);
+    const [selectedDistrict, setSelectedDistrict] = useState('');
 
     useEffect(() => {
         const q = query(
@@ -84,8 +86,10 @@ const Home: React.FC<HomeProps> = ({ user }) => {
             const type = formData.get('type') as string;
             const size = formData.get('size') as string;
             const address = formData.get('address') as string;
+            const district = formData.get('district') as string;
+            const localBody = formData.get('localBody') as string;
 
-            if (!date || !type || !size || !address) {
+            if (!date || !type || !size || !address || !district || !localBody) {
                 throw new Error("Please fill in all required fields.");
             }
 
@@ -95,6 +99,8 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                 size,
                 status: 'PENDING',
                 address,
+                district,
+                localBody,
                 weightEstimate: (Math.random() * 5 + 1).toFixed(1)
             };
 
@@ -119,6 +125,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
             setShowScheduleModal(false);
             setCoordinates(null);
+            setSelectedDistrict('');
             alert("Pickup scheduled successfully!");
         } catch (err: any) {
             console.error("Error scheduling pickup:", err);
@@ -200,8 +207,8 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
             {showScheduleModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-green-900/40 backdrop-blur-sm">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-                        <div className="px-8 py-6 bg-green-600 text-white flex justify-between items-center">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="px-8 py-6 bg-green-600 text-white flex justify-between items-center rounded-t-3xl">
                             <h3 className="text-xl font-bold">Schedule Pickup</h3>
                             <button onClick={() => setShowScheduleModal(false)}>✕</button>
                         </div>
@@ -224,6 +231,22 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                                     <option>Large</option>
                                     <option>Extra Large</option>
                                 </select>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">District</label>
+                                    <select name="district" required value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className="w-full px-4 py-3 bg-white border border-green-100 rounded-xl">
+                                        <option value="">Select District...</option>
+                                        {KERALA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Local Body</label>
+                                    <select name="localBody" required disabled={!selectedDistrict} className="w-full px-4 py-3 bg-white border border-green-100 rounded-xl">
+                                        <option value="">Select Local Body...</option>
+                                        {selectedDistrict && KERALA_LOCAL_BODIES[selectedDistrict]?.map(lb => <option key={lb} value={lb}>{lb}</option>)}
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Pickup Address</label>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import { AuthView, User } from './types';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -10,6 +11,7 @@ import MainLayout from './components/MainLayout';
 import Home from './components/Home';
 import CollectionLogs from './components/CollectionLogs';
 import EcoPoints from './components/EcoPoints';
+import Complaints from './components/Complaints';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AuthView>('LOGIN');
@@ -17,20 +19,41 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    let unsubscribeDoc: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'Eco Hero',
-          email: firebaseUser.email || '',
-          // Note: In a real app we would merge Firestore user data here to persist custom traits
+        unsubscribeDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUser({
+              id: firebaseUser.uid,
+              name: data.name || firebaseUser.displayName || 'Eco Hero',
+              email: firebaseUser.email || '',
+              ecoPoints: data.ecoPoints,
+              discountAvailable: data.discountAvailable,
+              address: data.address,
+              phone: data.phone
+            });
+          } else {
+            setUser({
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'Eco Hero',
+              email: firebaseUser.email || '',
+            });
+          }
+          setLoading(false);
         });
       } else {
         setUser(null);
+        setLoading(false);
+        if (unsubscribeDoc) unsubscribeDoc();
       }
-      setLoading(false);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) unsubscribeDoc();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -63,6 +86,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home user={user} />} />
             <Route path="/collection-logs" element={<CollectionLogs user={user} />} />
             <Route path="/eco-points" element={<EcoPoints user={user} />} />
+            <Route path="/complaints" element={<Complaints user={user} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

@@ -24,4 +24,11 @@ export interface WastePickup {
   discountApplied?: boolean;
 }
 
-
+export interface Complaint {
+  id?: string;
+  pickupId: string;
+  location: string;
+  complaintDate: string;
+  reportedBy: string;
+  status: 'pending' | 'resolved';
+}

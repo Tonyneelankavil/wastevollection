@@ -1,0 +1,3 @@
+import keralaDataJson from '../data/kerala.json';
+
+export const KERALA_DATA = keralaDataJson as Record<string, string[]>;

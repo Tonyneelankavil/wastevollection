@@ -12,6 +12,10 @@ const EcoPoints: React.FC<EcoPointsProps> = ({ user }) => {
     const [discountAvailable, setDiscountAvailable] = useState<boolean>(user.discountAvailable || false);
 
     useEffect(() => {
+        // Immediately update state with current user's initial data
+        setEcoPoints(user.ecoPoints || 0);
+        setDiscountAvailable(user.discountAvailable || false);
+
         // Listen for real-time updates to user's point balance
         const userRef = doc(db, 'users', user.id);
         const unsubscribe = onSnapshot(userRef, (docSnap) => {
@@ -23,7 +27,7 @@ const EcoPoints: React.FC<EcoPointsProps> = ({ user }) => {
         });
 
         return () => unsubscribe();
-    }, [user.id]);
+    }, [user.id, user.ecoPoints, user.discountAvailable]);
 
     const maxPoints = 5;
     const progressPercentage = Math.min((ecoPoints / maxPoints) * 100, 100);
