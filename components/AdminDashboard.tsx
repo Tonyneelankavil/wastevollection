@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, collectionGroup, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { User, WastePickup } from '../types';
+import { KERALA_DISTRICTS, KERALA_LOCAL_BODIES } from '../src/data/keralaData';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#FF6384'];
@@ -24,6 +25,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [filterType, setFilterType] = useState<string>('All');
+    const [filterDistrict, setFilterDistrict] = useState<string>('All');
+    const [filterLocalBody, setFilterLocalBody] = useState<string>('All');
     const [sortOption, setSortOption] = useState<'date' | 'type' | 'location'>('date');
 
     useEffect(() => {
@@ -176,8 +179,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
     // Client-side filtering and sorting
     const filteredPickups = pickups.filter(p => {
-        if (filterType === 'All') return true;
-        return p.type === filterType;
+        let match = true;
+        if (filterType !== 'All' && p.type !== filterType) match = false;
+        if (filterDistrict !== 'All' && p.district !== filterDistrict) match = false;
+        if (filterLocalBody !== 'All' && p.localBody !== filterLocalBody) match = false;
+        return match;
     }).sort((a, b) => {
         if (sortOption === 'date') return new Date(b.date).getTime() - new Date(a.date).getTime();
         if (sortOption === 'type') return a.type.localeCompare(b.type);
@@ -246,6 +252,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                 <option>Hazardous</option>
                             </select>
                             <select
+                                value={filterDistrict}
+                                onChange={(e) => {
+                                    setFilterDistrict(e.target.value);
+                                    setFilterLocalBody('All');
+                                }}
+                                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                                <option value="All">All Districts</option>
+                                {KERALA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                            <select
+                                value={filterLocalBody}
+                                onChange={(e) => setFilterLocalBody(e.target.value)}
+                                disabled={filterDistrict === 'All'}
+                                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                            >
+                                <option value="All">All Local Bodies</option>
+                                {filterDistrict !== 'All' && KERALA_LOCAL_BODIES[filterDistrict]?.map(lb => <option key={lb} value={lb}>{lb}</option>)}
+                            </select>
+                            <select
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value as any)}
                                 className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -290,6 +316,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                                    {p.district && <div className="font-bold text-gray-800">{p.district}</div>}
+                                                    {p.localBody && <div className="text-xs text-green-700">{p.localBody}</div>}
                                                     <div title={p.address}>{p.address}</div>
                                                     {p.latitude && p.longitude && (
                                                         <a
