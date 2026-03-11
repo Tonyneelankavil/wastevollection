@@ -117,12 +117,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         setLoading(false);
     };
 
-    const updatePickupStatus = async (path: string, newStatus: string) => {
+    const updatePickupStatus = async (path: string, newStatus: string, userId: string | undefined, currentStatus: string) => {
         try {
             const docRef = doc(db, path);
             await updateDoc(docRef, { status: newStatus });
+
+            // Increment Eco Points only if status changes to COMPLETED from a different status
+            if (newStatus === 'COMPLETED' && currentStatus !== 'COMPLETED' && userId) {
+                const { getDoc } = await import('firebase/firestore');
+                const userRef = doc(db, 'users', userId);
+                const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    const userData = userSnap.data() as User;
+                    const currentPoints = userData.ecoPoints || 0;
+
+                    if (currentPoints < 5) {
+                        const newPoints = currentPoints + 1;
+                        await updateDoc(userRef, {
+                            ecoPoints: newPoints,
+                            discountAvailable: newPoints >= 5 ? true : (userData.discountAvailable || false)
+                        });
+                    }
+                }
+            }
+
             // Update local state
-            setPickups(prev => prev.map(p => (p as any).path === path ? { ...p, status: newStatus } : p) as AdminPickup[]);
+            setPickups(prev => prev.map(p => p.path === path ? { ...p, status: newStatus } : p) as AdminPickup[]);
+            alert(`Status updated to ${newStatus}`);
         } catch (e) {
             alert("Failed to update status: " + e);
         }
@@ -263,6 +285,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                                 <td className="px-6 py-4 text-sm text-gray-700">
                                                     <div className="font-bold">{p.type}</div>
                                                     <div className="text-xs text-gray-500">{p.size || 'N/A'}</div>
+                                                    {p.discountApplied && (
+                                                        <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded-md shadow-sm">20% Discount Applied</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                                     <div title={p.address}>{p.address}</div>
@@ -288,8 +313,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                                 </td>
                                                 <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                                                     <div className="flex gap-2">
-                                                        <button onClick={() => updatePickupStatus((p as any).path, 'COMPLETED')} className="text-green-600 hover:text-green-900 font-bold text-xs uppercase">Complete</button>
-                                                        <button onClick={() => updatePickupStatus((p as any).path, 'CANCELLED')} className="text-red-400 hover:text-red-700 font-bold text-xs uppercase">Cancel</button>
+                                                        <button onClick={() => updatePickupStatus(p.path as string, 'COMPLETED', p.userId, p.status)} className="text-green-600 hover:text-green-900 font-bold text-xs uppercase disabled:opacity-50" disabled={p.status === 'COMPLETED'}>Complete</button>
+                                                        <button onClick={() => updatePickupStatus(p.path as string, 'CANCELLED', p.userId, p.status)} className="text-red-400 hover:text-red-700 font-bold text-xs uppercase disabled:opacity-50" disabled={p.status === 'CANCELLED'}>Cancel</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -367,6 +392,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                         <tr className="bg-gray-50 border-b border-gray-100">
                                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Eco Points</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
@@ -379,8 +405,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm text-gray-900">{u.email}</div>
                                                     <div className="text-xs text-gray-500">{u.phone || '-'}</div>
+                                                    <div className="text-xs text-gray-400">{u.address || '-'}</div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500">{u.address || '-'}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="text-sm font-bold text-green-700 bg-green-50 px-2 py-1 rounded-md">{u.ecoPoints || 0} / 5</span>
+                                                        {u.discountAvailable && (
+                                                            <span className="text-[10px] font-bold text-white bg-green-500 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">Discount Eligible</span>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))}
                                         {users.length === 0 && (

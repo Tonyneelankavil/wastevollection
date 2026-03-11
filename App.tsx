@@ -1,12 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import { AuthView, User } from './types';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import AdminDashboard from './components/AdminDashboard';
-import Dashboard from './components/Dashboard';
+import MainLayout from './components/MainLayout';
+import Home from './components/Home';
+import CollectionLogs from './components/CollectionLogs';
+import EcoPoints from './components/EcoPoints';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AuthView>('LOGIN');
@@ -20,6 +23,7 @@ const App: React.FC = () => {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || 'Eco Hero',
           email: firebaseUser.email || '',
+          // Note: In a real app we would merge Firestore user data here to persist custom traits
         });
       } else {
         setUser(null);
@@ -44,9 +48,26 @@ const App: React.FC = () => {
 
   if (user) {
     if (user.email === 'admin@gmail.com') {
-      return <AdminDashboard user={user} onLogout={handleLogout} />;
+      return (
+        <BrowserRouter>
+          <Routes>
+            <Route path="*" element={<AdminDashboard user={user} onLogout={handleLogout} />} />
+          </Routes>
+        </BrowserRouter>
+      );
     }
-    return <Dashboard user={user} onLogout={handleLogout} />;
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route element={<MainLayout user={user} onLogout={handleLogout} />}>
+            <Route path="/" element={<Home user={user} />} />
+            <Route path="/collection-logs" element={<CollectionLogs user={user} />} />
+            <Route path="/eco-points" element={<EcoPoints user={user} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
   return (

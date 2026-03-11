@@ -7,6 +7,8 @@ export interface User {
   email: string;
   phone?: string;
   address?: string;
+  ecoPoints?: number;
+  discountAvailable?: boolean;
 }
 
 export interface WastePickup {
@@ -19,6 +21,7 @@ export interface WastePickup {
   latitude?: number;
   longitude?: number;
   weightEstimate?: string;
+  discountApplied?: boolean;
 }
 
 
