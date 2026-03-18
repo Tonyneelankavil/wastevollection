@@ -9,7 +9,24 @@ interface ComplaintsProps {
 
 const Complaints: React.FC<ComplaintsProps> = ({ user }) => {
     const [pickups, setPickups] = useState<WastePickup[]>([]);
-    const [complaints, setComplaints] = useState<Record<string, boolean>>({}); // key: pickupId
+    const [complaints, setComplaints] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = localStorage.getItem(`reported_complaints_${user.id}`);
+            return saved ? JSON.parse(saved) : {};
+        } catch (error) {
+            console.error("Error loading complaints from localStorage:", error);
+            return {};
+        }
+    }); // key: pickupId
+
+    // Persist complaints to localStorage whenever it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem(`reported_complaints_${user.id}`, JSON.stringify(complaints));
+        } catch (error) {
+            console.error("Error saving complaints to localStorage:", error);
+        }
+    }, [complaints, user.id]);
     const [loading, setLoading] = useState(true);
     const [reporting, setReporting] = useState<string | null>(null);
 
